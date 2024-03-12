@@ -1,6 +1,6 @@
 import sys
 import csv
-import bs4
+from bs4 import BeautifulSoup
 import requests
 
 def odkaz_pro_stahovani(adresa_URL):
@@ -9,8 +9,8 @@ def odkaz_pro_stahovani(adresa_URL):
      Ověření zda je funkční odkaz a vrátí kod strakny v html.
      Ze kterého se získat další informace.
     '''
-    geter = requests.get(adresa_URL)
-    soup = bs4.BeautifulSoup(geter.text, 'html.parser')
+    response = requests.get(adresa_URL)
+    soup = BeautifulSoup(response.text, 'html.parser')
     print(f'STAHUJI DATA z adresy: {adresa_URL}')
     return soup
 def seznam_mest() -> list:
@@ -19,8 +19,8 @@ def seznam_mest() -> list:
       Vratí list se seznamem jmen měst z daneho odkazu funkce: odkaz_pro_stahovani().
     '''
     mesta = []
-    search_city = soup.find_all('td','overflow_name')
-    for mesto in search_city:
+    ziskani_mesta = soup.find_all('td','overflow_name')
+    for mesto in ziskani_mesta:
         mesta.append(mesto.text)
     return mesta
 def adresa_mest() -> list:
@@ -49,10 +49,10 @@ def politicke_strany() -> list:
     strany = []
     mesta = adresa_mest()
     repsonse = requests.get(mesta[0])
-    soup = bs4.BeautifulSoup(repsonse.text,'html.parser')
+    soup = BeautifulSoup(repsonse.text,'html.parser')
     link_strany = soup.find_all('td', 'overflow_name')
-    for p in link_strany:
-        strany.append(p.text)
+    for s in link_strany:
+        strany.append(s.text)
     return strany
 def volici_pocet() -> list:
     '''
@@ -62,7 +62,7 @@ def volici_pocet() -> list:
     mesta = adresa_mest()
     for link in mesta:
         html = requests.get(link)
-        soup = bs4.BeautifulSoup(html.text, 'html.parser')
+        soup = BeautifulSoup(html.text, 'html.parser')
         lide = soup.find_all('td', headers='sa2')
         for v in lide:
             volic.append(v.text)
@@ -76,10 +76,10 @@ def vydane_obalky() -> list:
     mesta = adresa_mest()
     for link in mesta:
         html = requests.get(link)
-        soup = bs4.BeautifulSoup(html.text, 'html.parser')
+        soup = BeautifulSoup(html.text, 'html.parser')
         lide = soup.find_all('td', headers='sa3')
-        for p in lide:
-            ucast.append(p.text)
+        for o in lide:
+            ucast.append(o.text)
     return ucast
 
 def platne_hlasy() -> list:
@@ -90,22 +90,21 @@ def platne_hlasy() -> list:
     addres = adresa_mest()
     for link in addres:
         html = requests.get(link)
-        soup = bs4.BeautifulSoup(html.text, 'html.parser')
-        pepople = soup.find_all('td', headers='sa6')
-        for p in pepople:
-            #p = p.text
+        soup = BeautifulSoup(html.text, 'html.parser')
+        lide = soup.find_all('td', headers='sa6')
+        for p in lide:
             corect.append(p.text)
     return corect
 
 def strany_pocet_hlasu() -> list:
     '''
-    Vytvoří list kde jsou uvedeny počty hlasu dané strany.
+    Vytvoří list kde jsou uvedeny počty hlasu dané strany, pro kazde mesto, které nám bratí funkce: adresa_mest().
     '''
     mesta = adresa_mest()
     volici = []
     for link in mesta:
         html = requests.get(link)
-        soup = bs4.BeautifulSoup(html.text, 'html.parser')
+        soup = BeautifulSoup(html.text, 'html.parser')
         strany_hlasy = soup.find_all('td','cislo',headers=["t1sb3",'t2sb3'])
         hlasy= []
         for p in strany_hlasy:
@@ -134,7 +133,7 @@ def vystup_mesta() -> list:
         radek_mesta.append(im+vs)
     return radek_mesta
 
-def vysledky(link,nazev_souboru):
+def vysledky_voleb(nazev_souboru):
     '''
     Ta to funkce slouži pro zapsaní dat do souboru typu .csv.
     Bere informace z funkcích: vstup_mesta, politické stran a tyto data vloži do tabulek s nazvem souboru
@@ -150,7 +149,9 @@ def vysledky(link,nazev_souboru):
         soubor_writer = csv.writer(soubor)
         soubor_writer.writerow(sloupek)
         soubor_writer.writerows(mesta)
-    print(f'Ukoncuje: {sys.argv[0]}')
+    print(f'Ukoncčuji: {sys.argv[0]}')
+    print(sloupek)
+    print(mesta)
 
 
 if len(sys.argv) == 3:
@@ -163,4 +164,4 @@ else:
 if __name__ == '__main__':
     webova_adresa = sys.argv[1]
     nazev_souboru = sys.argv[2]
-    vysledky(webova_adresa,nazev_souboru)
+    vysledky_voleb(nazev_souboru)
